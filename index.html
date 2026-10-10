@@ -30,6 +30,44 @@
   },true);
 })(window,document);
 </script>
+<script>
+/* Anonymous first-party funnel for Sika Admin (no names, numbers or IPs stored).
+   Records the visit and clicks, and hands this tab's ids to the Sika sign-up
+   page (?sv=&sj=) so the visit and a later number submission are one journey. */
+(function(w,d){
+  if(w.location.hostname.replace(/^www\./,'')!=='trysikanow.com')return;
+  try{if(w.navigator.doNotTrack==='1')return;}catch(e){}
+  var API='https://sika.cryon-tech.com/api/config?_route=funnel';
+  var ID=/^[a-zA-Z0-9_-]{8,128}$/;
+  function rid(p){var v=w.crypto&&w.crypto.randomUUID?w.crypto.randomUUID().replace(/-/g,''):Date.now().toString(36)+Math.random().toString(36).slice(2,14);return p+'_'+v;}
+  function stored(store,key,prefix){try{var v=store.getItem(key);if(!v||!ID.test(v)){v=rid(prefix);store.setItem(key,v);}return v;}catch(e){return rid(prefix);}}
+  var visitor=stored(w.localStorage,'sika_web_visitor_v1','visitor');
+  var journey=stored(w.sessionStorage,'sika_web_journey_v1','journey');
+  var q=new URLSearchParams(w.location.search);
+  var utm=(q.get('utm_source')||'').toLowerCase();
+  var source=(q.get('fbclid')||/^(facebook|fb|instagram|ig|meta)$/.test(utm))?'meta_ads'
+    :(utm||q.get('utm_campaign')||q.get('gclid')||q.get('ttclid'))?'other_campaign':'direct';
+  try{var kept=w.sessionStorage.getItem('sika_web_source_v1');if(kept&&source==='direct')source=kept;else w.sessionStorage.setItem('sika_web_source_v1',source);}catch(e){}
+  function send(event,eventId){
+    var body=JSON.stringify({event:event,eventId:eventId,visitorId:visitor,journeyId:journey,flow:'website',context:{trafficSource:source}});
+    try{if(w.navigator.sendBeacon&&w.navigator.sendBeacon(API,new Blob([body],{type:'text/plain'})))return;}catch(e){}
+    try{fetch(API,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'text/plain'},body:body});}catch(e){}
+  }
+  send('website_landed','website_landed_'+journey);
+  d.addEventListener('DOMContentLoaded',function(){
+    d.querySelectorAll('a[href^="https://sika.cryon-tech.com"]').forEach(function(a){
+      if(/\.apk$/.test(a.pathname))return;
+      var u=new URL(a.href);u.searchParams.set('sv',visitor);u.searchParams.set('sj',journey);a.href=u.toString();
+    });
+  });
+  d.addEventListener('click',function(ev){
+    var a=ev.target.closest&&ev.target.closest('a[href]');if(!a)return;
+    if(/\.apk$/.test(a.pathname))send('website_apk_clicked',rid('apk'));
+    else if(a.hostname==='sika.cryon-tech.com')send('website_app_clicked',rid('app'));
+    else if(a.hostname==='wa.me')send('website_whatsapp_clicked',rid('wa'));
+  },true);
+})(window,document);
+</script>
 </head><body>
 <div class="site-chrome">
 <div class="ticker" aria-label="Sika availability announcement"><span class="ticker-label">NOW LIVE</span><div class="ticker-window"><div class="ticker-track"><span>SOUTH AFRICA</span><i></i><span>MAURITIUS</span><i></i><span>BOTSWANA</span><i></i><span>NAMIBIA</span><i></i><span>SEYCHELLES</span><i></i><span>ZAMBIA</span><i></i><span>ANGOLA</span><i></i><span>ZIMBABWE</span><i></i><span>MOZAMBIQUE</span><i></i><span>MALAWI</span><i></i><span>TANZANIA</span><i></i><span>ESWATINI</span><i></i><span>LESOTHO</span><i></i><span>DRC</span><i></i><span aria-hidden="true">SOUTH AFRICA</span><i aria-hidden="true"></i><span aria-hidden="true">MAURITIUS</span><i aria-hidden="true"></i><span aria-hidden="true">BOTSWANA</span><i aria-hidden="true"></i><span aria-hidden="true">NAMIBIA</span><i aria-hidden="true"></i><span aria-hidden="true">SEYCHELLES</span><i aria-hidden="true"></i><span aria-hidden="true">ZAMBIA</span><i aria-hidden="true"></i><span aria-hidden="true">ANGOLA</span><i aria-hidden="true"></i><span aria-hidden="true">ZIMBABWE</span><i aria-hidden="true"></i><span aria-hidden="true">MOZAMBIQUE</span><i aria-hidden="true"></i><span aria-hidden="true">MALAWI</span><i aria-hidden="true"></i><span aria-hidden="true">TANZANIA</span><i aria-hidden="true"></i><span aria-hidden="true">ESWATINI</span><i aria-hidden="true"></i><span aria-hidden="true">LESOTHO</span><i aria-hidden="true"></i><span aria-hidden="true">DRC</span><i aria-hidden="true"></i></div></div><span class="ticker-arrow" aria-hidden="true">→</span></div>

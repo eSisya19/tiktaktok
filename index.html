@@ -53,7 +53,16 @@
     try{if(w.navigator.sendBeacon&&w.navigator.sendBeacon(API,new Blob([body],{type:'text/plain'})))return;}catch(e){}
     try{fetch(API,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'text/plain'},body:body});}catch(e){}
   }
-  send('website_landed','website_landed_'+journey);
+  // Count a landing only once the page is actually shown. Facebook's in-app
+  // browser can pre-load ad landing pages in the background before a tap;
+  // those hidden or prerendered loads are not visits.
+  var landed=false;
+  function land(){
+    if(landed||d.visibilityState!=='visible'||d.prerendering)return;
+    landed=true;send('website_landed','website_landed_'+journey);
+  }
+  land();
+  if(!landed){d.addEventListener('visibilitychange',land);d.addEventListener('prerenderingchange',land);}
   d.addEventListener('DOMContentLoaded',function(){
     d.querySelectorAll('a[href^="https://sika.cryon-tech.com"]').forEach(function(a){
       if(/\.apk$/.test(a.pathname))return;

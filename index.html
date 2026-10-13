@@ -48,8 +48,13 @@
   var source=(q.get('fbclid')||/^(facebook|fb|instagram|ig|meta)$/.test(utm))?'meta_ads'
     :(utm||q.get('utm_campaign')||q.get('gclid')||q.get('ttclid'))?'other_campaign':'direct';
   try{var kept=w.sessionStorage.getItem('sika_web_source_v1');if(kept&&source==='direct')source=kept;else w.sessionStorage.setItem('sika_web_source_v1',source);}catch(e){}
+  // Which ad sent this visit: the ads fill utm_content from {{ad.name}}.
+  var AD=/^[A-Za-z0-9_-]{1,64}$/;
+  var adName=q.get('utm_content')||'';if(!AD.test(adName))adName='';
+  try{if(adName)w.sessionStorage.setItem('sika_web_ad_v1',adName);else{adName=w.sessionStorage.getItem('sika_web_ad_v1')||'';if(!AD.test(adName))adName='';}}catch(e){}
   function send(event,eventId){
-    var body=JSON.stringify({event:event,eventId:eventId,visitorId:visitor,journeyId:journey,flow:'website',context:{trafficSource:source}});
+    var context={trafficSource:source};if(adName)context.adName=adName;
+    var body=JSON.stringify({event:event,eventId:eventId,visitorId:visitor,journeyId:journey,flow:'website',context:context});
     try{if(w.navigator.sendBeacon&&w.navigator.sendBeacon(API,new Blob([body],{type:'text/plain'})))return;}catch(e){}
     try{fetch(API,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'text/plain'},body:body});}catch(e){}
   }
